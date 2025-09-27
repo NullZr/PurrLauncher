@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install vcpkg
       run: |
@@ -35,16 +35,16 @@ jobs:
         cmake --build . --config Release
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: PurrLauncher-Windows
-        path: build/MinecraftLauncher.exe
+        path: build/Release/MinecraftLauncher.exe
 
   build-debug:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install vcpkg
       run: |
@@ -66,3 +66,9 @@ jobs:
       run: |
         cd build-debug
         cmake --build . --config Debug
+
+    - name: Upload debug artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: PurrLauncher-Windows-Debug
+        path: build-debug/Debug/MinecraftLauncher.exe
