@@ -1,0 +1,68 @@
+name: Build PurrLauncher
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+
+    - name: Install dependencies
+      run: |
+        .\vcpkg\vcpkg install nlohmann-json:x64-mingw-static
+        .\vcpkg\vcpkg install curl:x64-mingw-static
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-static
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: PurrLauncher-Windows
+        path: build/MinecraftLauncher.exe
+
+  build-debug:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+
+    - name: Install dependencies
+      run: |
+        .\vcpkg\vcpkg install nlohmann-json:x64-mingw-static
+        .\vcpkg\vcpkg install curl:x64-mingw-static
+
+    - name: Configure CMake (Debug)
+      run: |
+        mkdir build-debug
+        cd build-debug
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DCMAKE_BUILD_TYPE=Debug
+
+    - name: Build (Debug)
+      run: |
+        cd build-debug
+        cmake --build . --config Debug

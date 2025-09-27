@@ -11,6 +11,12 @@
 *.gch
 *.pch
 
+# Linker files
+*.ilk
+
+# Debugger Files
+*.pdb
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
@@ -30,3 +36,50 @@
 *.exe
 *.out
 *.app
+
+# debug information files
+*.dwo
+
+#CLion
+.idea
+
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# Configuration files with sensitive data
+config.json
+*.log
+launcher.log
+
+# Runtime files
+java17/
+minecraft/
+plugins/*.dll
+*.zip
+*.jar
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Visual Studio files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+
+# vcpkg
+vcpkg_installed/

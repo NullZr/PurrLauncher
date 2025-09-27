@@ -1,0 +1,15 @@
+{
+    "api_url": "https://your-api-server.com",
+    "debug": true,
+    "java_downloaded": false,
+    "java_path": "",
+    "log_file": "launcher.log",
+    "max_ram": "4G",
+    "pack_manifest_url": "https://your-api-server.com/manifest",
+    "pack_url": "https://your-api-server.com/modpack",
+    "pack_version": "1.0.0",
+    "auth_token": "",
+    "username": "",
+    "uuid": ""
+}
+
