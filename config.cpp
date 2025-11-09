@@ -1,4 +1,3 @@
-// config.cpp
 #include "include/config.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -91,7 +90,7 @@ bool loadConfig(std::string& javaPath, std::string& username, std::string& uuid,
 
     // Initialize with defaults
     debug = true;
-    max_ram = "4G";
+    max_ram = "6G";
     pack_url = "";
     pack_manifest_url = "";
     pack_version = "0.0.0";
@@ -164,14 +163,9 @@ void saveConfig(const std::string& javaPath, const std::string& username, const 
         config.setValue("max_ram", max_ram);
     }
 
-    if (!pack_url.empty()) {
-        config.setValue("pack_url", pack_url);
-    }
-
-    if (!pack_manifest_url.empty()) {
-        config.setValue("pack_manifest_url", pack_manifest_url);
-    }
-
+    // Always save pack configuration with defaults if empty
+    config.setValue("pack_url", pack_url.empty() ? "https://your-api-server.com/pack" : pack_url);
+    config.setValue("pack_manifest_url", pack_manifest_url.empty() ? "https://your-api-server.com/manifest" : pack_manifest_url);
     config.setValue("pack_version", pack_version);
 
     if (!log_file.empty()) {

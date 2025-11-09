@@ -53,7 +53,7 @@ Example minimal server structure:
 /api/auth/validate      - User validation
 /authserver/authenticate - Mojang-compatible auth
 /manifest              - Modpack info
-/modpack              - Modpack download
+/pack              - Modpack download
 /plugins/             - Plugin downloads (optional)
 ```
 

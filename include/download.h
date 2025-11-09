@@ -1,14 +1,16 @@
-// download.h
-#pragma once
+#ifndef DOWNLOAD_H
+#define DOWNLOAD_H
+
 #include <string>
-#include <filesystem>
-#include <curl/curl.h>
 
-namespace fs = std::filesystem;
-
-size_t write_data(const void* ptr, const size_t size, const size_t nmemb, FILE* stream);
-int progress_func(void* ptr, const curl_off_t TotalToDownload, const curl_off_t NowDownloaded, curl_off_t TotalToUpload, curl_off_t NowUploaded);
+// Download file from URL to local path with retry support
+// Supports both regular and streaming downloads
 bool downloadFile(const std::string& url, const std::string& outputPath);
-static size_t write_callback(const char* ptr, const size_t size, const size_t nmemb, void* userdata);
+
+// Perform HTTP GET request
 std::string httpGet(const std::string& url);
+
+// Perform HTTP POST request with JSON data
 std::string httpPost(const std::string& url, const std::string& jsonData);
+
+#endif // DOWNLOAD_H

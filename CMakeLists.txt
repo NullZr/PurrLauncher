@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(MinecraftLauncher VERSION 2.4.104 LANGUAGES CXX RC)
 
+set(CMAKE_TOOLCHAIN_FILE "E:/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
 # Set C++ standard and features
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

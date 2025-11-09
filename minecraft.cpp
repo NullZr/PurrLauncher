@@ -383,7 +383,7 @@ std::unordered_map<std::string, std::string> createPlaceholderMap(
         {"classpath", cp},
         {"natives_directory", gameDir + "natives"},
         {"launcher_name", "PurrLauncher"},
-        {"launcher_version", "2.4.104"},
+        {"launcher_version", "1.3"},
         {"clientid", ""},
         {"auth_xuid", ""},
         {"quickPlayPath", ""},
@@ -678,10 +678,28 @@ bool updatePack(const std::string& pack_url, const std::string& pack_manifest_ur
         }
     } // manifest_ifs automatically closed here
 
-    if (remote_version == pack_version) {
+    // Check if essential modpack directories exist
+    const std::vector<std::string> essentialDirs = {"mods", "config"};
+    bool packFilesExist = true;
+    for (const auto& dir : essentialDirs) {
+        if (!fs::exists(gameDir + dir)) {
+            packFilesExist = false;
+            log("Missing essential directory: " + dir, debug, log_file);
+            break;
+        }
+    }
+
+    // Only skip download if versions match AND all files exist
+    if (remote_version == pack_version && packFilesExist) {
         log("Pack is up to date (" + pack_version + ").", debug, log_file);
         fs::remove(temp_manifest_path);
         return true;
+    }
+
+    if (!packFilesExist) {
+        log("Pack files are missing. Downloading complete modpack...", debug, log_file);
+    } else {
+        log("Pack version mismatch. Updating from " + pack_version + " to " + remote_version, debug, log_file);
     }
 
     // Clean up directories more efficiently
@@ -708,7 +726,7 @@ bool updatePack(const std::string& pack_url, const std::string& pack_manifest_ur
 // Helper function to cleanup directories for update
 bool cleanupDirectoriesForUpdate(const std::string& gameDir, bool debug, const std::string& log_file) {
     // Define folders to delete with better container
-    const std::vector<std::string> foldersToDelete = {"config", "fancymenu_data", "mods", "shaderpacks"};
+    const std::vector<std::string> foldersToDelete = {"config", "fancymenu_data", "mods"};
 
     // Remove servers.dat file
     const std::string serversFile = gameDir + "servers.dat";
@@ -738,24 +756,131 @@ bool cleanupDirectoriesForUpdate(const std::string& gameDir, bool debug, const s
     return true;
 }
 
-// Helper function to download and extract pack
+// Helper function to download and extract pack with safety checks
 bool downloadAndExtractPack(const std::string& pack_url, const std::string& gameDir,
                            bool debug, const std::string& log_file) {
     const std::string pack_path = gameDir + "pack.zip";
+    const std::string temp_pack_path = gameDir + "pack.zip.tmp";
+
+    // Remove existing pack.zip and temp files if they exist
+    for (const auto& path : {pack_path, temp_pack_path}) {
+        if (fs::exists(path)) {
+            try {
+                log("Removing existing file: " + path, debug, log_file);
+                fs::remove(path);
+            } catch (const fs::filesystem_error& e) {
+                log("Failed to remove existing file: " + std::string(e.what()), debug, log_file);
+            }
+        }
+    }
 
     log("Downloading updated pack from " + pack_url + "...", debug, log_file);
     if (!downloadFile(pack_url, pack_path)) {
         log("Failed to download pack.", debug, log_file);
+
+        // Clean up failed download
+        if (fs::exists(pack_path)) {
+            try {
+                auto failedSize = fs::file_size(pack_path);
+                log("Partial download size: " + std::to_string(failedSize) + " bytes", debug, log_file);
+                fs::remove(pack_path);
+                log("Cleaned up incomplete pack.zip", debug, log_file);
+            } catch (const fs::filesystem_error& e) {
+                log("Failed to clean up pack.zip: " + std::string(e.what()), debug, log_file);
+            }
+        }
         return false;
     }
 
-    log("Extracting pack...", debug, log_file);
-    if (!extractArchive(pack_path, gameDir)) {
-        log("Failed to extract pack.", debug, log_file);
+    log("Download completed successfully", debug, log_file);
+
+    // Verify that pack.zip was actually downloaded and has content
+    if (!fs::exists(pack_path)) {
+        log("Pack file does not exist after download.", debug, log_file);
+        return false;
+    }
+
+    try {
+        auto fileSize = fs::file_size(pack_path);
+        if (fileSize == 0) {
+            log("Downloaded pack.zip is empty (0 bytes).", debug, log_file);
+            fs::remove(pack_path);
+            return false;
+        }
+
+        // Log file size for debugging
+        double sizeMB = static_cast<double>(fileSize) / (1024.0 * 1024.0);
+        std::stringstream ss;
+        ss << "Downloaded pack.zip size: " << std::fixed << std::setprecision(2) << sizeMB << " MB";
+        log(ss.str(), debug, log_file);
+
+        // Basic validation - pack should be at least 1MB for a modpack
+        if (fileSize < 1024 * 1024) {
+            log("Warning: pack.zip seems too small (" + std::to_string(fileSize) + " bytes). Might be corrupted.", debug, log_file);
+        }
+    } catch (const fs::filesystem_error& e) {
+        log("Failed to check pack.zip size: " + std::string(e.what()), debug, log_file);
         fs::remove(pack_path);
         return false;
     }
 
-    fs::remove(pack_path);
+    log("Extracting pack...", debug, log_file);
+
+    // Try to extract the archive
+    bool extractSuccess = false;
+    try {
+        extractSuccess = extractArchive(pack_path, gameDir);
+    } catch (const std::exception& e) {
+        log("Exception during extraction: " + std::string(e.what()), debug, log_file);
+        extractSuccess = false;
+    } catch (...) {
+        log("Unknown exception during extraction", debug, log_file);
+        extractSuccess = false;
+    }
+
+    if (!extractSuccess) {
+        log("Failed to extract pack. The archive might be corrupted.", debug, log_file);
+
+        // Clean up corrupted pack.zip
+        try {
+            fs::remove(pack_path);
+            log("Removed corrupted pack.zip", debug, log_file);
+        } catch (const fs::filesystem_error& e) {
+            log("Failed to remove corrupted pack.zip: " + std::string(e.what()), debug, log_file);
+        }
+        return false;
+    }
+
+    // Verify extraction was successful by checking for essential directories
+    const std::vector<std::string> essentialDirs = {"mods", "config"};
+    bool allDirsExist = true;
+
+    for (const auto& dir : essentialDirs) {
+        const std::string dirPath = gameDir + dir;
+        if (!fs::exists(dirPath)) {
+            log("Essential directory missing after extraction: " + dir, debug, log_file);
+            allDirsExist = false;
+        }
+    }
+
+    if (!allDirsExist) {
+        log("Pack extraction incomplete - missing essential directories.", debug, log_file);
+
+        // Clean up incomplete extraction
+        try {
+            fs::remove(pack_path);
+        } catch (...) {}
+        return false;
+    }
+
+    // Clean up pack.zip after successful extraction
+    try {
+        fs::remove(pack_path);
+        log("Successfully extracted and cleaned up pack.zip", debug, log_file);
+    } catch (const fs::filesystem_error& e) {
+        log("Warning: Failed to remove pack.zip after extraction: " + std::string(e.what()), debug, log_file);
+        // Not critical - extraction was successful
+    }
+
     return true;
 }

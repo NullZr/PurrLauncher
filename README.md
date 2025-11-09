@@ -68,7 +68,7 @@ Create a `config.json` file in the application directory:
     "log_file": "launcher.log",
     "max_ram": "4G",
     "pack_manifest_url": "https://your-api-server.com/manifest",
-    "pack_url": "https://your-api-server.com/modpack",
+    "pack_url": "https://your-api-server.com/pack",
     "pack_version": "1.0.0"
 }
 ```

@@ -110,11 +110,11 @@ struct LauncherConfig {
     std::string username;
     std::string uuid;
     std::string max_ram = "6G";
-    std::string pack_url = "https://your-api-server.com/modpack";
+    std::string pack_url = "https://your-api-server.come/pack";
     std::string pack_manifest_url = "https://your-api-server.com/manifest";
     std::string pack_version;
     std::string log_file = "launcher.log";
-    std::string api_url = "https://your-api-server.com";
+    std::string api_url = "https://flurry.moe";
     std::string auth_token;
     bool debug = false;
 };
@@ -267,6 +267,17 @@ int main() {
         config.max_ram, config.pack_url, config.pack_manifest_url,
         config.pack_version, config.log_file, config.api_url, config.auth_token
     );
+
+    // Ensure pack URLs have default values if empty
+    if (config.pack_url.empty()) {
+        config.pack_url = "https://your-api-server.com/pack";
+    }
+    if (config.pack_manifest_url.empty()) {
+        config.pack_manifest_url = "https://your-api-server.com/manifest";
+    }
+    if (config.api_url.empty()) {
+        config.api_url = "https://your-api-server.com";
+    }
 
     // Check for token and prompt if needed
     if (config.auth_token.empty()) {
